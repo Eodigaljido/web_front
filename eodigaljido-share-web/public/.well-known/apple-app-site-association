@@ -1,0 +1,11 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "TEAM_ID.com.eodigaljido.app",
+        "paths": ["/courses/public/*", "/friends/add/*"]
+      }
+    ]
+  }
+}
