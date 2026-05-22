@@ -202,11 +202,18 @@ export function CourseSharePage() {
           )}
         </div>
 
-        {(course.departure || course.arrival) && (
+        {(course.departure || course.arrival || visibleSteps.length > 0) && (
           <div className="rounded-2xl border border-border-soft bg-surface-card p-4 text-sm text-ink-secondary shadow-sm">
-            {course.departure && <span>출발 {course.departure}</span>}
-            {course.departure && course.arrival && <span className="mx-2 text-ink-muted">→</span>}
-            {course.arrival && <span>도착 {course.arrival}</span>}
+            {course.departure && <p>출발 {course.departure}</p>}
+            {visibleSteps.length > 0 && (
+              <ul className="mt-1 space-y-0.5 text-ink-muted">
+                {visibleSteps.map((step, i) => (
+                  <li key={`${step.name}-${i}`}>경유 {i + 1}. {step.name}</li>
+                ))}
+                {extraSteps > 0 && <li>+ {extraSteps}곳 더</li>}
+              </ul>
+            )}
+            {course.arrival && <p className={visibleSteps.length > 0 ? 'mt-1' : ''}>도착 {course.arrival}</p>}
           </div>
         )}
 
@@ -227,22 +234,20 @@ export function CourseSharePage() {
           </p>
         )}
 
-        {visibleSteps.length > 0 && (
+        {visibleSteps.some((s) => s.durationMinutes != null) && (
           <div className="rounded-2xl border border-border-soft bg-surface-sheet p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
-              경로 미리보기
+              체류 시간
             </p>
             <ol className="mt-3 space-y-2 text-sm text-ink-secondary">
-              {visibleSteps.map((step, i) => (
-                <li key={`${step.name}-${i}`}>
-                  {i + 1}. {step.name}
-                  {step.durationMinutes != null && ` · ${step.durationMinutes}분`}
-                </li>
-              ))}
+              {visibleSteps.map((step, i) =>
+                step.durationMinutes != null ? (
+                  <li key={`${step.name}-${i}-dur`}>
+                    {step.name} · {step.durationMinutes}분
+                  </li>
+                ) : null,
+              )}
             </ol>
-            {extraSteps > 0 && (
-              <p className="mt-2 text-xs text-ink-muted">+ {extraSteps}곳 더</p>
-            )}
           </div>
         )}
       </div>

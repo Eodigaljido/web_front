@@ -10,6 +10,9 @@ type KakaoDirectionsResponse = {
   }[];
 };
 
+/** 카카오 길찾기 waypoints 최대 5개 (출발·도착 제외) */
+const MAX_WAYPOINTS_PER_REQUEST = 5;
+
 function toCoord(p: GeoPoint): string {
   return `${p.lng},${p.lat}`;
 }
@@ -30,8 +33,7 @@ function parseVertexes(data: KakaoDirectionsResponse): GeoPoint[] {
   return path;
 }
 
-/** 카카오 길찾기(자동차) — 행선지 순서대로 도로 경로 좌표 반환 */
-export async function fetchDrivingRoutePath(stops: GeoPoint[]): Promise<GeoPoint[] | null> {
+async function fetchDrivingRouteSegment(stops: GeoPoint[]): Promise<GeoPoint[] | null> {
   if (stops.length < 2) return stops;
 
   const params = new URLSearchParams({
@@ -40,7 +42,7 @@ export async function fetchDrivingRoutePath(stops: GeoPoint[]): Promise<GeoPoint
     priority: 'RECOMMEND',
   });
 
-  const middle = stops.slice(1, -1);
+  const middle = stops.slice(1, -1).slice(0, MAX_WAYPOINTS_PER_REQUEST);
   if (middle.length > 0) {
     params.set('waypoints', middle.map(toCoord).join('|'));
   }
@@ -51,4 +53,44 @@ export async function fetchDrivingRoutePath(stops: GeoPoint[]): Promise<GeoPoint
   const data = (await res.json()) as KakaoDirectionsResponse;
   const path = parseVertexes(data);
   return path.length >= 2 ? path : null;
+}
+
+function appendPath(merged: GeoPoint[], segment: GeoPoint[]): void {
+  if (segment.length === 0) return;
+  if (merged.length === 0) {
+    merged.push(...segment);
+    return;
+  }
+  const last = merged[merged.length - 1];
+  const first = segment[0];
+  if (last.lat === first.lat && last.lng === first.lng) {
+    merged.push(...segment.slice(1));
+  } else {
+    merged.push(...segment);
+  }
+}
+
+/** 출발·경유·도착 순서대로 도로 경로 (경유 5개 초과 시 구간 나눠 이어 붙임) */
+export async function fetchDrivingRoutePath(stops: GeoPoint[]): Promise<GeoPoint[] | null> {
+  if (stops.length < 2) return stops;
+
+  const maxStopsPerLeg = MAX_WAYPOINTS_PER_REQUEST + 2;
+  if (stops.length <= maxStopsPerLeg) {
+    return fetchDrivingRouteSegment(stops);
+  }
+
+  const merged: GeoPoint[] = [];
+  let start = 0;
+
+  while (start < stops.length - 1) {
+    const end = Math.min(start + maxStopsPerLeg - 1, stops.length - 1);
+    const leg = stops.slice(start, end + 1);
+    const segment = await fetchDrivingRouteSegment(leg);
+    if (!segment) return merged.length >= 2 ? merged : null;
+    appendPath(merged, segment);
+    if (end >= stops.length - 1) break;
+    start = end;
+  }
+
+  return merged.length >= 2 ? merged : null;
 }

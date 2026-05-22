@@ -51,6 +51,18 @@ declare namespace kakao.maps {
     setMap(map: Map | null): void;
   }
 
+  interface CustomOverlayOptions {
+    map?: Map;
+    position: LatLng;
+    content: HTMLElement | string;
+    yAnchor?: number;
+  }
+
+  class CustomOverlay {
+    constructor(options: CustomOverlayOptions);
+    setMap(map: Map | null): void;
+  }
+
   function load(callback: () => void): void;
 }
 

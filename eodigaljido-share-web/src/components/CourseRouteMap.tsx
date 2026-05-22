@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { loadKakaoMaps } from '../utils/loadKakaoMaps';
 import { fetchDrivingRoutePath } from '../utils/kakaoDirections';
+import { createStopMarkerContent } from '../utils/kakaoMapMarkers';
 import { fitKakaoMapToPath, waitForMapContainer } from '../utils/kakaoMapView';
 import type { GeoPoint } from '../utils/geocode';
 
@@ -14,7 +15,7 @@ type CourseRouteMapProps = {
 export function CourseRouteMap({ points, className = '', onReady, onError }: CourseRouteMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map | null>(null);
-  const overlaysRef = useRef<Array<kakao.maps.Marker | kakao.maps.Polyline>>([]);
+  const overlaysRef = useRef<Array<kakao.maps.Marker | kakao.maps.Polyline | kakao.maps.CustomOverlay>>([]);
   const onReadyRef = useRef(onReady);
   const onErrorRef = useRef(onError);
 
@@ -62,14 +63,18 @@ export function CourseRouteMap({ points, className = '', onReady, onError }: Cou
         points.forEach((p, i) => {
           const isStart = i === 0;
           const isEnd = i === points.length - 1;
-          const title = p.label ?? (isStart ? '출발' : isEnd ? '도착' : `경유 ${i + 1}`);
-          const marker = new kakao.maps.Marker({
+          const label =
+            p.label ?? (isStart ? '출발' : isEnd ? '도착' : `경유 ${i}`);
+          const overlay = new kakao.maps.CustomOverlay({
             map,
             position: stopLatLngs[i],
-            title,
+            content: createStopMarkerContent(i, points.length, label),
+            yAnchor: 1,
           });
-          overlaysRef.current.push(marker);
+          overlaysRef.current.push(overlay);
         });
+
+        fitKakaoMapToPath(map, [...stopLatLngs, ...linePath]);
 
         if (linePath.length >= 2) {
           const line = new kakao.maps.Polyline({
@@ -83,7 +88,6 @@ export function CourseRouteMap({ points, className = '', onReady, onError }: Cou
           overlaysRef.current.push(line);
         }
 
-        fitKakaoMapToPath(map, linePath);
         if (cancelled) return;
 
         onReadyRef.current?.();
