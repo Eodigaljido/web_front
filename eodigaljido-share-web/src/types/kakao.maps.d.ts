@@ -55,6 +55,7 @@ declare namespace kakao.maps {
     map?: Map;
     position: LatLng;
     content: HTMLElement | string;
+    xAnchor?: number;
     yAnchor?: number;
   }
 

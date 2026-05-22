@@ -9,6 +9,22 @@
   }
 }
 
+/* 지도·오버레이(타일/마커/선) 동일 크기·위치 */
+.course-kakao-map {
+  overflow: hidden;
+}
+
+.course-kakao-map > div {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.course-kakao-map .wrap_map,
+.course-kakao-map .wrap_map > div {
+  width: 100% !important;
+  height: 100% !important;
+}
+
 /* 카카오맵 UI: 로고·저작권·외부 링크 숨김 */
 .course-kakao-map .wrap_map a[href*='kakao'],
 .course-kakao-map .wrap_map img[alt='Kakao'],

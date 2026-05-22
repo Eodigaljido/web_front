@@ -2,7 +2,12 @@ import { useEffect, useRef } from 'react';
 import { loadKakaoMaps } from '../utils/loadKakaoMaps';
 import { fetchDrivingRoutePath } from '../utils/kakaoDirections';
 import { createStopMarkerContent } from '../utils/kakaoMapMarkers';
-import { fitKakaoMapToPath, waitForMapContainer } from '../utils/kakaoMapView';
+import {
+  fitKakaoMapToPath,
+  observeMapContainerResize,
+  scheduleMapLayerSync,
+  waitForMapContainer,
+} from '../utils/kakaoMapView';
 import type { GeoPoint } from '../utils/geocode';
 
 type CourseRouteMapProps = {
@@ -16,6 +21,7 @@ export function CourseRouteMap({ points, className = '', onReady, onError }: Cou
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const overlaysRef = useRef<Array<kakao.maps.Marker | kakao.maps.Polyline | kakao.maps.CustomOverlay>>([]);
+  const resizeCleanupRef = useRef<(() => void) | null>(null);
   const onReadyRef = useRef(onReady);
   const onErrorRef = useRef(onError);
 
@@ -59,6 +65,8 @@ export function CourseRouteMap({ points, className = '', onReady, onError }: Cou
           level: 8,
         });
         mapRef.current = map;
+        resizeCleanupRef.current?.();
+        resizeCleanupRef.current = observeMapContainerResize(el, map);
 
         points.forEach((p, i) => {
           const isStart = i === 0;
@@ -69,6 +77,7 @@ export function CourseRouteMap({ points, className = '', onReady, onError }: Cou
             map,
             position: stopLatLngs[i],
             content: createStopMarkerContent(i, points.length, label),
+            xAnchor: 0.5,
             yAnchor: 1,
           });
           overlaysRef.current.push(overlay);
@@ -87,6 +96,7 @@ export function CourseRouteMap({ points, className = '', onReady, onError }: Cou
         }
 
         fitKakaoMapToPath(map, linePath.length >= 2 ? linePath : stopLatLngs);
+        scheduleMapLayerSync(map);
 
         if (cancelled) return;
 
@@ -101,6 +111,8 @@ export function CourseRouteMap({ points, className = '', onReady, onError }: Cou
 
     return () => {
       cancelled = true;
+      resizeCleanupRef.current?.();
+      resizeCleanupRef.current = null;
       overlaysRef.current.forEach((o) => o.setMap(null));
       overlaysRef.current = [];
       mapRef.current = null;
