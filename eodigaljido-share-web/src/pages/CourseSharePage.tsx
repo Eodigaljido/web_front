@@ -4,6 +4,7 @@ import { useParams } from 'react-router-dom';
 import { Clock, MapPin, Star, Tag } from 'lucide-react';
 import { fetchCoursePreview } from '../api/courses';
 import { AppShell } from '../components/AppShell';
+import { CourseRouteMap } from '../components/CourseRouteMap';
 import { ErrorState } from '../components/ErrorState';
 import { NotFoundContent } from '../components/NotFoundContent';
 import { PrimaryButton } from '../components/PrimaryButton';
@@ -12,6 +13,8 @@ import { StoreButtons } from '../components/StoreButtons';
 import { TagChip } from '../components/TagChip';
 import { env } from '../config/env';
 import type { CoursePreview } from '../types/course';
+import { resolveCourseMapPoints } from '../utils/courseMapPoints';
+import type { GeoPoint } from '../utils/geocode';
 import { openInApp } from '../utils/openInApp';
 
 type PageState =
@@ -39,6 +42,9 @@ function CourseSkeleton() {
 export function CourseSharePage() {
   const { courseId = '' } = useParams<{ courseId: string }>();
   const [state, setState] = useState<PageState>({ status: 'loading' });
+  const [mapPoints, setMapPoints] = useState<GeoPoint[]>([]);
+  const [mapLoading, setMapLoading] = useState(false);
+  const [mapFailed, setMapFailed] = useState(false);
 
   const load = useCallback(async () => {
     if (!courseId) {
@@ -46,6 +52,8 @@ export function CourseSharePage() {
       return;
     }
     setState({ status: 'loading' });
+    setMapPoints([]);
+    setMapFailed(false);
     try {
       const course = await fetchCoursePreview(courseId);
       if (!course) {
@@ -61,6 +69,26 @@ export function CourseSharePage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  useEffect(() => {
+    if (state.status !== 'success') return;
+
+    let cancelled = false;
+    setMapLoading(true);
+    setMapFailed(false);
+
+    void resolveCourseMapPoints(state.course).then((points) => {
+      if (!cancelled) {
+        setMapPoints(points);
+        setMapFailed(points.length === 0);
+        setMapLoading(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [state]);
 
   if (state.status === 'not_found') {
     return <NotFoundContent message="공유된 코스를 찾을 수 없어요" showOg={false} />;
@@ -90,6 +118,8 @@ export function CourseSharePage() {
   const appPath = `courses/public/${courseId}` as const;
   const visibleSteps = course.steps?.slice(0, 5) ?? [];
   const extraSteps = (course.steps?.length ?? 0) - visibleSteps.length;
+  const showMap = mapPoints.length > 0;
+  const showThumbnail = Boolean(course.thumbnailUrl) && !showMap;
 
   return (
     <AppShell hideFooter>
@@ -108,16 +138,31 @@ export function CourseSharePage() {
       </Helmet>
 
       <div className="space-y-4 pb-28">
-        <div className="aspect-video overflow-hidden rounded-2xl bg-gradient-to-br from-brand-100 to-brand-500/30">
-          {course.thumbnailUrl ? (
+        <div className="aspect-video overflow-hidden rounded-2xl border border-border-soft bg-surface-sheet shadow-sm">
+          {showMap ? (
+            <CourseRouteMap points={mapPoints} />
+          ) : showThumbnail ? (
             <img
-              src={course.thumbnailUrl}
+              src={course.thumbnailUrl!}
               alt={course.title}
               className="h-full w-full object-cover"
               loading="lazy"
             />
+          ) : mapLoading ? (
+            <div className="flex h-full min-h-[220px] flex-col items-center justify-center gap-3 bg-gradient-to-br from-brand-50 to-brand-100">
+              <div
+                className="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent"
+                aria-hidden
+              />
+              <p className="text-xs text-ink-muted">지도 불러오는 중…</p>
+            </div>
+          ) : mapFailed ? (
+            <div className="flex h-full min-h-[220px] flex-col items-center justify-center gap-2 bg-gradient-to-br from-brand-50 to-brand-100 px-4 text-center">
+              <MapPin className="h-10 w-10 text-brand-500" aria-hidden />
+              <p className="text-xs text-ink-muted">지도를 불러오지 못했어요. 앱에서 전체 경로를 확인해 주세요.</p>
+            </div>
           ) : (
-            <div className="flex h-full items-center justify-center">
+            <div className="flex h-full min-h-[220px] items-center justify-center bg-gradient-to-br from-brand-100 to-brand-500/30">
               <MapPin className="h-12 w-12 text-brand-500" aria-hidden />
             </div>
           )}

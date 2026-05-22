@@ -1,6 +1,17 @@
 export type CourseStep = {
   name: string;
   durationMinutes?: number;
+  lat?: number;
+  lng?: number;
+  latitude?: number;
+  longitude?: number;
+};
+
+export type RoutePoint = {
+  lat: number;
+  lng: number;
+  name?: string;
+  label?: string;
 };
 
 export type CoursePreview = {
@@ -16,8 +27,10 @@ export type CoursePreview = {
   saveCount?: number;
   rating?: number;
   steps?: CourseStep[];
+  routePoints?: RoutePoint[];
 };
 
 export type CourseApiResponse = Partial<CoursePreview> & {
   overallDurationMinutes?: number;
+  mapPoints?: RoutePoint[];
 };

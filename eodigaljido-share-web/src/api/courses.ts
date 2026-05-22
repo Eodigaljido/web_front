@@ -20,6 +20,7 @@ function normalizeCourse(data: CourseApiResponse, courseId: string): CoursePrevi
     saveCount: data.saveCount,
     rating: data.rating,
     steps: data.steps,
+    routePoints: data.routePoints ?? data.mapPoints,
   };
 }
 

@@ -132,9 +132,11 @@ VITE_OG_IMAGE_URL=https://share.eodigaljido.rjsgud.com/og-default.png
 
 ## 5. 운영자 — 배포·환경 변수
 
+**Nginx + Let's Encrypt (서버 직접 배포, 명령어·설정 전체):** [nginx-deploy.md](./nginx-deploy.md)
+
 ### 5.1 배포 전 필수
 
-1. **DNS** `share.eodigaljido.rjsgud.com` → 호스팅(Vercel, Cloudflare Pages 등)
+1. **DNS** `share.eodigaljido.rjsgud.com` → 서버 IP (Nginx) 또는 호스팅(Vercel, Cloudflare Pages 등)
 2. **환경 변수** (호스팅 대시보드에 설정, 빌드 시 주입)
 
 | 변수 | 설명 |
