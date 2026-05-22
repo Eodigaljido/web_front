@@ -8,3 +8,16 @@
     min-height: 100dvh;
   }
 }
+
+/* 카카오맵 UI: 로고·저작권·외부 링크 숨김 */
+.course-kakao-map .wrap_map a[href*='kakao'],
+.course-kakao-map .wrap_map img[alt='Kakao'],
+.course-kakao-map .wrap_map .map_copyright,
+.course-kakao-map .wrap_map [class*='copyright'],
+.course-kakao-map .wrap_map [class*='logo'],
+.course-kakao-map .wrap_map .box_logo {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

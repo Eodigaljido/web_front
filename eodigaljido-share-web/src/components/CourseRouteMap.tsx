@@ -1,16 +1,6 @@
 import { useEffect, useRef } from 'react';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
+import { loadKakaoMaps } from '../utils/loadKakaoMaps';
 import type { GeoPoint } from '../utils/geocode';
-
-L.Icon.Default.mergeOptions({
-  iconUrl: markerIcon,
-  iconRetinaUrl: markerIcon2x,
-  shadowUrl: markerShadow,
-});
 
 type CourseRouteMapProps = {
   points: GeoPoint[];
@@ -19,51 +9,69 @@ type CourseRouteMapProps = {
 
 export function CourseRouteMap({ points, className = '' }: CourseRouteMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<L.Map | null>(null);
+  const mapRef = useRef<kakao.maps.Map | null>(null);
+  const overlaysRef = useRef<Array<kakao.maps.Marker | kakao.maps.Polyline>>([]);
 
   useEffect(() => {
     const el = containerRef.current;
     if (!el || points.length === 0) return;
 
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
-    }
+    let cancelled = false;
 
-    const map = L.map(el, {
-      zoomControl: true,
-      scrollWheelZoom: false,
-      attributionControl: true,
-    });
-    mapRef.current = map;
+    void loadKakaoMaps()
+      .then(() => {
+        if (cancelled) return;
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      maxZoom: 19,
-    }).addTo(map);
+        overlaysRef.current.forEach((o) => o.setMap(null));
+        overlaysRef.current = [];
 
-    const latLngs = points.map((p) => L.latLng(p.lat, p.lng));
+        if (mapRef.current) {
+          mapRef.current = null;
+        }
 
-    points.forEach((p, i) => {
-      const isStart = i === 0;
-      const isEnd = i === points.length - 1;
-      const title = p.label ?? (isStart ? '출발' : isEnd ? '도착' : `경유 ${i + 1}`);
-      L.marker([p.lat, p.lng]).addTo(map).bindPopup(title);
-    });
+        const path = points.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
+        const map = new kakao.maps.Map(el, {
+          center: path[0],
+          level: 8,
+        });
+        mapRef.current = map;
 
-    if (latLngs.length >= 2) {
-      L.polyline(latLngs, {
-        color: '#2563EB',
-        weight: 4,
-        opacity: 0.85,
-      }).addTo(map);
-    }
+        points.forEach((p, i) => {
+          const isStart = i === 0;
+          const isEnd = i === points.length - 1;
+          const title = p.label ?? (isStart ? '출발' : isEnd ? '도착' : `경유 ${i + 1}`);
+          const marker = new kakao.maps.Marker({
+            map,
+            position: path[i],
+            title,
+          });
+          overlaysRef.current.push(marker);
+        });
 
-    const bounds = L.latLngBounds(latLngs);
-    map.fitBounds(bounds.pad(0.15));
+        if (path.length >= 2) {
+          const line = new kakao.maps.Polyline({
+            map,
+            path,
+            strokeWeight: 5,
+            strokeColor: '#2563EB',
+            strokeOpacity: 0.9,
+            strokeStyle: 'solid',
+          });
+          overlaysRef.current.push(line);
+        }
+
+        const bounds = new kakao.maps.LatLngBounds();
+        path.forEach((ll) => bounds.extend(ll));
+        map.setBounds(bounds);
+      })
+      .catch(() => {
+        /* 상위에서 mapFailed 처리 */
+      });
 
     return () => {
-      map.remove();
+      cancelled = true;
+      overlaysRef.current.forEach((o) => o.setMap(null));
+      overlaysRef.current = [];
       mapRef.current = null;
     };
   }, [points]);
@@ -73,10 +81,8 @@ export function CourseRouteMap({ points, className = '' }: CourseRouteMapProps) 
   }
 
   return (
-    <div
-      ref={containerRef}
-      className={`z-0 h-full min-h-[220px] w-full ${className}`}
-      aria-label="코스 경로 지도"
-    />
+    <div className={`course-kakao-map relative h-full min-h-[220px] w-full ${className}`}>
+      <div ref={containerRef} className="h-full w-full" aria-label="코스 경로 지도" />
+    </div>
   );
 }

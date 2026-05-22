@@ -76,6 +76,8 @@ VITE_APP_SCHEME=eodigaljido
 VITE_PLAY_STORE_URL=https://play.google.com/store/apps/details?id=com.eodigaljido.app
 VITE_APP_STORE_URL=
 VITE_OG_IMAGE_URL=https://share.eodigaljido.rjsgud.com/og-default.png
+VITE_KAKAO_MAP_APP_KEY=카카오_JavaScript_키
+VITE_KAKAO_REST_API_KEY=카카오_REST_API_키
 EOF
 ```
 
@@ -128,11 +130,11 @@ server {
         proxy_read_timeout 15s;
     }
 
-    # 지도 지오코딩 (브라우저 CORS 회피)
-    location /geocode/ {
-        proxy_pass https://nominatim.openstreetmap.org/;
-        proxy_set_header Host nominatim.openstreetmap.org;
-        proxy_set_header User-Agent "EodigaljidoShareWeb/1.0 (https://share.eodigaljido.rjsgud.com)";
+    # 카카오 장소 검색 (REST API 키는 서버에만 둠)
+    location /kakao-api/ {
+        proxy_pass https://dapi.kakao.com/;
+        proxy_set_header Host dapi.kakao.com;
+        proxy_set_header Authorization "KakaoAK YOUR_KAKAO_REST_API_KEY";
         proxy_ssl_server_name on;
     }
 
