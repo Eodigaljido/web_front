@@ -45,6 +45,7 @@ export function CourseSharePage() {
   const [mapPoints, setMapPoints] = useState<GeoPoint[]>([]);
   const [mapLoading, setMapLoading] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
+  const [mapSdkFailed, setMapSdkFailed] = useState(false);
 
   const load = useCallback(async () => {
     if (!courseId) {
@@ -76,12 +77,14 @@ export function CourseSharePage() {
     let cancelled = false;
     setMapLoading(true);
     setMapFailed(false);
+    setMapSdkFailed(false);
 
     void resolveCourseMapPoints(state.course).then((points) => {
       if (!cancelled) {
         setMapPoints(points);
         setMapFailed(points.length === 0);
         setMapLoading(false);
+        if (points.length === 0) setMapSdkFailed(false);
       }
     });
 
@@ -118,8 +121,8 @@ export function CourseSharePage() {
   const appPath = `courses/public/${courseId}` as const;
   const visibleSteps = course.steps?.slice(0, 5) ?? [];
   const extraSteps = (course.steps?.length ?? 0) - visibleSteps.length;
-  const showMap = mapPoints.length > 0;
-  const showThumbnail = Boolean(course.thumbnailUrl) && !showMap;
+  const showMap = mapPoints.length > 0 && !mapSdkFailed;
+  const showThumbnail = Boolean(course.thumbnailUrl) && !showMap && !mapLoading;
 
   return (
     <AppShell hideFooter>
@@ -140,7 +143,10 @@ export function CourseSharePage() {
       <div className="space-y-4 pb-28">
         <div className="aspect-video overflow-hidden rounded-2xl border border-border-soft bg-surface-sheet shadow-sm">
           {showMap ? (
-            <CourseRouteMap points={mapPoints} />
+            <CourseRouteMap
+              points={mapPoints}
+              onError={() => setMapSdkFailed(true)}
+            />
           ) : showThumbnail ? (
             <img
               src={course.thumbnailUrl!}
@@ -156,10 +162,14 @@ export function CourseSharePage() {
               />
               <p className="text-xs text-ink-muted">지도 불러오는 중…</p>
             </div>
-          ) : mapFailed ? (
+          ) : mapFailed || mapSdkFailed ? (
             <div className="flex h-full min-h-[220px] flex-col items-center justify-center gap-2 bg-gradient-to-br from-brand-50 to-brand-100 px-4 text-center">
               <MapPin className="h-10 w-10 text-brand-500" aria-hidden />
-              <p className="text-xs text-ink-muted">지도를 불러오지 못했어요. 앱에서 전체 경로를 확인해 주세요.</p>
+              <p className="text-xs text-ink-muted">
+                {mapSdkFailed
+                  ? '카카오맵을 불러오지 못했어요. JavaScript 키·도메인 등록을 확인해 주세요.'
+                  : '지도를 불러오지 못했어요. 앱에서 전체 경로를 확인해 주세요.'}
+              </p>
             </div>
           ) : (
             <div className="flex h-full min-h-[220px] items-center justify-center bg-gradient-to-br from-brand-100 to-brand-500/30">

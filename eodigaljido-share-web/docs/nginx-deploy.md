@@ -138,6 +138,14 @@ server {
         proxy_ssl_server_name on;
     }
 
+    # 카카오 길찾기(도로 경로 polyline)
+    location /kakao-navi/ {
+        proxy_pass https://apis-navi.kakao.com/;
+        proxy_set_header Host apis-navi.kakao.com;
+        proxy_set_header Authorization "KakaoAK YOUR_KAKAO_REST_API_KEY";
+        proxy_ssl_server_name on;
+    }
+
     location = /.well-known/apple-app-site-association {
         default_type application/json;
         try_files $uri =404;

@@ -17,6 +17,12 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/kakao-api/, ''),
           headers: kakaoRestKey ? { Authorization: `KakaoAK ${kakaoRestKey}` } : {},
         },
+        '/kakao-navi': {
+          target: 'https://apis-navi.kakao.com',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/kakao-navi/, ''),
+          headers: kakaoRestKey ? { Authorization: `KakaoAK ${kakaoRestKey}` } : {},
+        },
       },
     },
     preview: { port: 4174 },
