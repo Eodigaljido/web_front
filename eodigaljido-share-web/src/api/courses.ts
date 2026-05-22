@@ -1,33 +1,14 @@
 import axios from 'axios';
 import { apiClient } from './client';
+import { mergeCoursePreview, normalizeCourse } from './courseNormalize';
 import type { CourseApiResponse, CoursePreview } from '../types/course';
-import { formatDuration } from '../utils/formatDuration';
-
-function normalizeCourse(data: CourseApiResponse, courseId: string): CoursePreview {
-  const durationLabel =
-    data.durationLabel ?? formatDuration(data.overallDurationMinutes);
-
-  return {
-    courseId: data.courseId ?? courseId,
-    title: data.title ?? '코스',
-    region: data.region,
-    category: data.category,
-    durationLabel,
-    thumbnailUrl: data.thumbnailUrl,
-    departure: data.departure,
-    arrival: data.arrival,
-    tags: data.tags,
-    saveCount: data.saveCount,
-    rating: data.rating,
-    steps: data.steps,
-    routePoints: data.routePoints ?? data.mapPoints,
-  };
-}
 
 async function fetchFrom(path: string, courseId: string): Promise<CoursePreview | null> {
   try {
     const { data } = await apiClient.get<CourseApiResponse>(path);
-    if (!data?.title && !data?.courseId) return null;
+    if (!data?.title && !data?.courseId && !(data as Record<string, unknown>).id) {
+      return null;
+    }
     return normalizeCourse(data, courseId);
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {
@@ -38,7 +19,18 @@ async function fetchFrom(path: string, courseId: string): Promise<CoursePreview 
 }
 
 export async function fetchCoursePreview(courseId: string): Promise<CoursePreview | null> {
-  const preview = await fetchFrom(`/api/courses/public/${encodeURIComponent(courseId)}/preview`, courseId);
-  if (preview) return preview;
-  return fetchFrom(`/api/courses/${encodeURIComponent(courseId)}`, courseId);
+  const encoded = encodeURIComponent(courseId);
+  const previewPath = `/api/courses/public/${encoded}/preview`;
+  const detailPath = `/api/courses/${encoded}`;
+
+  const [preview, detail] = await Promise.all([
+    fetchFrom(previewPath, courseId),
+    fetchFrom(detailPath, courseId),
+  ]);
+
+  if (!preview && !detail) return null;
+  if (!preview) return detail;
+  if (!detail) return preview;
+
+  return mergeCoursePreview(preview, detail);
 }

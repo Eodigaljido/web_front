@@ -74,8 +74,6 @@ export function CourseRouteMap({ points, className = '', onReady, onError }: Cou
           overlaysRef.current.push(overlay);
         });
 
-        fitKakaoMapToPath(map, [...stopLatLngs, ...linePath]);
-
         if (linePath.length >= 2) {
           const line = new kakao.maps.Polyline({
             map,
@@ -87,6 +85,8 @@ export function CourseRouteMap({ points, className = '', onReady, onError }: Cou
           });
           overlaysRef.current.push(line);
         }
+
+        fitKakaoMapToPath(map, linePath.length >= 2 ? linePath : stopLatLngs);
 
         if (cancelled) return;
 

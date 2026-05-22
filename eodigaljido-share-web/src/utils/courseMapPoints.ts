@@ -3,6 +3,7 @@ import type { GeoPoint } from './geocode';
 import { geocodePlace } from './geocode';
 
 const MAX_STOPS = 20;
+const GEOCODE_DELAY_MS = 120;
 
 function stepToPoint(step: CourseStep, index: number): GeoPoint | null {
   const lat = step.lat ?? step.latitude;
@@ -23,15 +24,9 @@ function pushStop(points: GeoPoint[], point: GeoPoint): void {
   points.push(point);
 }
 
-/** routePoints가 도로 좌표 뭉치인지(경유 마커용이 아님) */
-function isDenseRoutePolyline(routePoints: CoursePreview['routePoints']): boolean {
-  if (!routePoints?.length) return false;
-  if (routePoints.length > 12) return true;
-  const labeled = routePoints.filter((p) => p.label || p.name).length;
-  return labeled < routePoints.length / 2;
+async function delay(ms: number): Promise<void> {
+  if (ms > 0) await new Promise((r) => setTimeout(r, ms));
 }
-
-const GEOCODE_DELAY_MS = 120;
 
 async function pointFromName(name: string, label: string): Promise<GeoPoint | null> {
   const trimmed = name.trim();
@@ -41,14 +36,23 @@ async function pointFromName(name: string, label: string): Promise<GeoPoint | nu
   return { ...hit, label };
 }
 
-async function delay(ms: number): Promise<void> {
-  if (ms > 0) await new Promise((r) => setTimeout(r, ms));
+/** 백엔드 routeSteps(좌표 포함) → 지도 행선지 */
+function stopsFromSteps(steps: CourseStep[]): GeoPoint[] {
+  const stops: GeoPoint[] = [];
+  for (let i = 0; i < steps.length; i++) {
+    const p = stepToPoint(steps[i], i);
+    if (!p) continue;
+    const name = steps[i].name || p.label || `경유 ${i + 1}`;
+    const label =
+      i === 0 ? `출발 ${name}` : i === steps.length - 1 ? `도착 ${name}` : name;
+    pushStop(stops, { ...p, label });
+  }
+  return stops;
 }
 
-/** 출발 → steps(경유) → 도착 순서의 행선지(지도 마커·길찾기 경유) */
-export async function resolveCourseMapPoints(course: CoursePreview): Promise<GeoPoint[]> {
+/** 출발 → steps(경유) → 도착 (이름 지오코딩 fallback) */
+async function stopsFromNames(course: CoursePreview): Promise<GeoPoint[]> {
   const stops: GeoPoint[] = [];
-
   let geocodeCount = 0;
 
   if (course.departure) {
@@ -57,10 +61,9 @@ export async function resolveCourseMapPoints(course: CoursePreview): Promise<Geo
     if (p) pushStop(stops, p);
   }
 
-  const steps = course.steps ?? [];
-  for (let i = 0; i < steps.length && stops.length < MAX_STOPS; i++) {
-    const step = steps[i];
-    const fromCoord = stepToPoint(step, i);
+  for (const step of course.steps ?? []) {
+    if (stops.length >= MAX_STOPS) break;
+    const fromCoord = stepToPoint(step, stops.length);
     if (fromCoord) {
       pushStop(stops, fromCoord);
       continue;
@@ -78,24 +81,20 @@ export async function resolveCourseMapPoints(course: CoursePreview): Promise<Geo
     if (p) pushStop(stops, p);
   }
 
-  if (stops.length >= 2) return stops;
+  return stops;
+}
 
-  // 출발/도착 필드 없이 steps 좌표만 있는 경우
-  const fromSteps = steps
-    .map((step, i) => stepToPoint(step, i))
-    .filter((p): p is GeoPoint => p != null);
+/** 출발 → 경유(routeSteps) → 도착 순서의 행선지 */
+export async function resolveCourseMapPoints(course: CoursePreview): Promise<GeoPoint[]> {
+  const steps = course.steps ?? [];
+
+  // 1) 백엔드 routeSteps에 좌표가 있으면 그 순서 그대로 사용 (경유지 포함)
+  const fromSteps = stopsFromSteps(steps);
   if (fromSteps.length >= 2) return fromSteps;
 
-  // routePoints가 소수의 명시 지점일 때만 fallback
-  if (course.routePoints?.length && !isDenseRoutePolyline(course.routePoints)) {
-    return course.routePoints
-      .filter((p) => p.lat != null && p.lng != null)
-      .map((p, i) => ({
-        lat: p.lat,
-        lng: p.lng,
-        label: p.label ?? p.name ?? `지점 ${i + 1}`,
-      }));
-  }
+  // 2) 이름으로 출발·경유·도착 지오코딩
+  const fromNames = await stopsFromNames(course);
+  if (fromNames.length >= 2) return fromNames;
 
-  return stops;
+  return fromSteps.length > 0 ? fromSteps : fromNames;
 }

@@ -31,6 +31,20 @@ export type CoursePreview = {
 };
 
 export type CourseApiResponse = Partial<CoursePreview> & {
+  id?: string;
+  thumbnail?: string | null;
   overallDurationMinutes?: number;
   mapPoints?: RoutePoint[];
+  /** 백엔드 실제 필드명 */
+  routeSteps?: Array<
+    | CourseStep
+    | {
+        id?: number;
+        name?: string;
+        latitude?: number;
+        longitude?: number;
+        stayMinutes?: number | null;
+        address?: string | null;
+      }
+  >;
 };
