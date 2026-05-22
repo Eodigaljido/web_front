@@ -47,6 +47,10 @@ export function CourseSharePage() {
   const [mapFailed, setMapFailed] = useState(false);
   const [mapSdkFailed, setMapSdkFailed] = useState(false);
 
+  const handleMapSdkError = useCallback(() => {
+    setMapSdkFailed(true);
+  }, []);
+
   const load = useCallback(async () => {
     if (!courseId) {
       setState({ status: 'not_found' });
@@ -143,10 +147,7 @@ export function CourseSharePage() {
       <div className="space-y-4 pb-28">
         <div className="aspect-video overflow-hidden rounded-2xl border border-border-soft bg-surface-sheet shadow-sm">
           {showMap ? (
-            <CourseRouteMap
-              points={mapPoints}
-              onError={() => setMapSdkFailed(true)}
-            />
+            <CourseRouteMap points={mapPoints} onError={handleMapSdkError} />
           ) : showThumbnail ? (
             <img
               src={course.thumbnailUrl!}
@@ -167,7 +168,7 @@ export function CourseSharePage() {
               <MapPin className="h-10 w-10 text-brand-500" aria-hidden />
               <p className="text-xs text-ink-muted">
                 {mapSdkFailed
-                  ? '카카오맵을 불러오지 못했어요. JavaScript 키·도메인 등록을 확인해 주세요.'
+                  ? '카카오맵을 불러오지 못했어요. 서버에서 npm run build 전 .env에 JavaScript 키가 있는지, 카카오 콘솔 Web 도메인 등록을 확인해 주세요.'
                   : '지도를 불러오지 못했어요. 앱에서 전체 경로를 확인해 주세요.'}
               </p>
             </div>

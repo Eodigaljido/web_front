@@ -13,5 +13,8 @@ export const env = {
   playStoreUrl: requireEnv('VITE_PLAY_STORE_URL', import.meta.env.VITE_PLAY_STORE_URL),
   appStoreUrl: import.meta.env.VITE_APP_STORE_URL?.trim() ?? '',
   ogImageUrl: requireEnv('VITE_OG_IMAGE_URL', import.meta.env.VITE_OG_IMAGE_URL),
-  kakaoMapAppKey: import.meta.env.VITE_KAKAO_MAP_APP_KEY?.trim() ?? '',
+  kakaoMapAppKey: requireEnv(
+    'VITE_KAKAO_MAP_APP_KEY',
+    import.meta.env.VITE_KAKAO_MAP_APP_KEY,
+  ),
 };

@@ -19,11 +19,19 @@ export function loadKakaoMaps(): Promise<void> {
   loadPromise = new Promise((resolve, reject) => {
     const script = document.createElement('script');
     script.async = true;
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false`;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${encodeURIComponent(appKey)}&autoload=false`;
     script.onload = () => {
-      kakao.maps.load(resolve);
+      if (typeof kakao === 'undefined' || !kakao.maps?.load) {
+        loadPromise = null;
+        reject(new Error('Kakao Maps SDK unavailable'));
+        return;
+      }
+      kakao.maps.load(() => resolve());
     };
-    script.onerror = () => reject(new Error('Failed to load Kakao Maps SDK'));
+    script.onerror = () => {
+      loadPromise = null;
+      reject(new Error('Failed to load Kakao Maps SDK script'));
+    };
     document.head.appendChild(script);
   });
 

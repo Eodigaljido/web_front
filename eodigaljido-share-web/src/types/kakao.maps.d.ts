@@ -1,4 +1,8 @@
 /** Kakao Maps JS SDK (최소 타입) */
+declare namespace kakao.maps.event {
+  function trigger(target: kakao.maps.Map, type: string): void;
+}
+
 declare namespace kakao.maps {
   class LatLng {
     constructor(lat: number, lng: number);
@@ -18,6 +22,8 @@ declare namespace kakao.maps {
   class Map {
     constructor(container: HTMLElement, options: MapOptions);
     setBounds(bounds: LatLngBounds): void;
+    setCenter(latlng: LatLng): void;
+    setLevel(level: number): void;
   }
 
   interface MarkerOptions {
