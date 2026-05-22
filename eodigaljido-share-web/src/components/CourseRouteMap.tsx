@@ -1,13 +1,16 @@
 import { useEffect, useRef } from 'react';
 import { loadKakaoMaps } from '../utils/loadKakaoMaps';
+import { fetchDrivingRoutePath } from '../utils/kakaoDirections';
 import type { GeoPoint } from '../utils/geocode';
 
 type CourseRouteMapProps = {
   points: GeoPoint[];
   className?: string;
+  onReady?: () => void;
+  onError?: () => void;
 };
 
-export function CourseRouteMap({ points, className = '' }: CourseRouteMapProps) {
+export function CourseRouteMap({ points, className = '', onReady, onError }: CourseRouteMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<kakao.maps.Map | null>(null);
   const overlaysRef = useRef<Array<kakao.maps.Marker | kakao.maps.Polyline>>([]);
@@ -18,20 +21,24 @@ export function CourseRouteMap({ points, className = '' }: CourseRouteMapProps) 
 
     let cancelled = false;
 
-    void loadKakaoMaps()
-      .then(() => {
+    void (async () => {
+      try {
+        await loadKakaoMaps();
+        if (cancelled) return;
+
+        const roadPath = await fetchDrivingRoutePath(points);
         if (cancelled) return;
 
         overlaysRef.current.forEach((o) => o.setMap(null));
         overlaysRef.current = [];
+        mapRef.current = null;
 
-        if (mapRef.current) {
-          mapRef.current = null;
-        }
+        const stopLatLngs = points.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
+        const linePath =
+          roadPath?.map((p) => new kakao.maps.LatLng(p.lat, p.lng)) ?? stopLatLngs;
 
-        const path = points.map((p) => new kakao.maps.LatLng(p.lat, p.lng));
         const map = new kakao.maps.Map(el, {
-          center: path[0],
+          center: stopLatLngs[0],
           level: 8,
         });
         mapRef.current = map;
@@ -42,16 +49,16 @@ export function CourseRouteMap({ points, className = '' }: CourseRouteMapProps) 
           const title = p.label ?? (isStart ? '출발' : isEnd ? '도착' : `경유 ${i + 1}`);
           const marker = new kakao.maps.Marker({
             map,
-            position: path[i],
+            position: stopLatLngs[i],
             title,
           });
           overlaysRef.current.push(marker);
         });
 
-        if (path.length >= 2) {
+        if (linePath.length >= 2) {
           const line = new kakao.maps.Polyline({
             map,
-            path,
+            path: linePath,
             strokeWeight: 5,
             strokeColor: '#2563EB',
             strokeOpacity: 0.9,
@@ -61,12 +68,13 @@ export function CourseRouteMap({ points, className = '' }: CourseRouteMapProps) 
         }
 
         const bounds = new kakao.maps.LatLngBounds();
-        path.forEach((ll) => bounds.extend(ll));
+        linePath.forEach((ll) => bounds.extend(ll));
         map.setBounds(bounds);
-      })
-      .catch(() => {
-        /* 상위에서 mapFailed 처리 */
-      });
+        onReady?.();
+      } catch {
+        if (!cancelled) onError?.();
+      }
+    })();
 
     return () => {
       cancelled = true;
@@ -74,7 +82,7 @@ export function CourseRouteMap({ points, className = '' }: CourseRouteMapProps) 
       overlaysRef.current = [];
       mapRef.current = null;
     };
-  }, [points]);
+  }, [points, onReady, onError]);
 
   if (points.length === 0) {
     return null;

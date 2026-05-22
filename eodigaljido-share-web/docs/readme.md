@@ -139,14 +139,18 @@ VITE_OG_IMAGE_URL=https://share.eodigaljido.rjsgud.com/og-default.png
 1. **DNS** `share.eodigaljido.rjsgud.com` → 서버 IP (Nginx) 또는 호스팅(Vercel, Cloudflare Pages 등)
 2. **환경 변수** (호스팅 대시보드에 설정, 빌드 시 주입)
 
-| 변수 | 설명 |
-|------|------|
-| `VITE_API_BASE_URL` | 백엔드 API 주소 (슬래시 없이) |
-| `VITE_SHARE_SITE_URL` | 이 사이트 공개 URL |
-| `VITE_APP_SCHEME` | `eodigaljido` |
-| `VITE_PLAY_STORE_URL` | Play 스토어 링크 |
-| `VITE_APP_STORE_URL` | App Store (없으면 비움) |
-| `VITE_OG_IMAGE_URL` | 기본 OG 이미지 URL |
+| 변수 | 설명 | 앱(Expo) 대응 |
+|------|------|----------------|
+| `VITE_API_BASE_URL` | 백엔드 API 주소 (슬래시 없이) | `EXPO_PUBLIC_API_BASE_URL` |
+| `VITE_SHARE_SITE_URL` | 이 사이트 공개 URL | `EXPO_PUBLIC_SHARE_BASE_URL` |
+| `VITE_KAKAO_REST_API_KEY` | 장소검색·길찾기 (빌드·Nginx 프록시) | `EXPO_PUBLIC_KAKAO_REST_API_KEY` |
+| `VITE_KAKAO_MAP_APP_KEY` | 카카오맵 JS SDK (웹 전용) | 콘솔 **JavaScript** 키 (앱 env 없음) |
+| `VITE_APP_SCHEME` | `eodigaljido` | — |
+| `VITE_PLAY_STORE_URL` | Play 스토어 링크 | — |
+| `VITE_APP_STORE_URL` | App Store (없으면 비움) | — |
+| `VITE_OG_IMAGE_URL` | 기본 OG 이미지 URL | — |
+
+Google Maps / TMAP / Weather / OAuth 키는 share-web에서 쓰지 않습니다.
 
 3. **SPA 라우팅:** 모든 경로 `/*` → `/index.html`
 4. **예외:** `/.well-known/*` 는 JSON 파일 그대로 200 응답 (리다이렉트 금지)

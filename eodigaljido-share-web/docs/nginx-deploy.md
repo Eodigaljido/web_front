@@ -77,7 +77,7 @@ VITE_PLAY_STORE_URL=https://play.google.com/store/apps/details?id=com.eodigaljid
 VITE_APP_STORE_URL=
 VITE_OG_IMAGE_URL=https://share.eodigaljido.rjsgud.com/og-default.png
 VITE_KAKAO_MAP_APP_KEY=카카오_JavaScript_키
-VITE_KAKAO_REST_API_KEY=카카오_REST_API_키
+VITE_KAKAO_REST_API_KEY=앱_EXPO_PUBLIC_KAKAO_REST_API_KEY_와_동일
 EOF
 ```
 
@@ -137,6 +137,8 @@ server {
         proxy_set_header Authorization "KakaoAK YOUR_KAKAO_REST_API_KEY";
         proxy_ssl_server_name on;
     }
+
+    # Authorization 값 = .env 의 VITE_KAKAO_REST_API_KEY (= 앱 EXPO_PUBLIC_KAKAO_REST_API_KEY)
 
     # 카카오 길찾기(도로 경로 polyline)
     location /kakao-navi/ {
