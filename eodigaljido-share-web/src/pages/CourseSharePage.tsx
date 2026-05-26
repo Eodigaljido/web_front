@@ -42,53 +42,54 @@ export function CourseSharePage() {
   const { courseId = '' } = useParams<{ courseId: string }>();
   const [state, setState] = useState<PageState>({ status: 'loading' });
   const [mapPoints, setMapPoints] = useState<GeoPoint[]>([]);
-  const [mapLoading, setMapLoading] = useState(false);
+  const [mapResolved, setMapResolved] = useState(false);
   const [mapFailed, setMapFailed] = useState(false);
   const [mapSdkFailed, setMapSdkFailed] = useState(false);
+
+  const id = courseId.trim();
+  const appPath = `courses/public/${courseId}` as const;
+  const canonicalPath = `/courses/public/${encodeURIComponent(courseId)}`;
 
   const handleMapSdkError = useCallback(() => {
     setMapSdkFailed(true);
   }, []);
 
-  const load = useCallback(async () => {
-    if (!courseId) {
-      setState({ status: 'not_found' });
-      return;
-    }
-    setState({ status: 'loading' });
-    setMapPoints([]);
-    setMapFailed(false);
-    try {
-      const course = await fetchCoursePreview(courseId);
-      if (!course) {
-        setState({ status: 'not_found' });
-        return;
-      }
-      setState({ status: 'success', course });
-    } catch {
-      setState({ status: 'error' });
-    }
-  }, [courseId]);
-
   useEffect(() => {
-    void load();
-  }, [load]);
+    if (!id) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const course = await fetchCoursePreview(id);
+        if (cancelled) return;
+        if (!course) {
+          setState({ status: 'not_found' });
+          return;
+        }
+        setState({ status: 'success', course });
+      } catch {
+        if (!cancelled) setState({ status: 'error' });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   useEffect(() => {
     if (state.status !== 'success') return;
 
+    const course = state.course;
     let cancelled = false;
-    setMapLoading(true);
-    setMapFailed(false);
-    setMapSdkFailed(false);
 
-    void resolveCourseMapPoints(state.course).then((points) => {
-      if (!cancelled) {
-        setMapPoints(points);
-        setMapFailed(points.length === 0);
-        setMapLoading(false);
-        if (points.length === 0) setMapSdkFailed(false);
-      }
+    void resolveCourseMapPoints(course).then((points) => {
+      if (cancelled) return;
+      setMapPoints(points);
+      setMapFailed(points.length === 0);
+      setMapResolved(true);
+      if (points.length === 0) setMapSdkFailed(false);
     });
 
     return () => {
@@ -96,8 +97,17 @@ export function CourseSharePage() {
     };
   }, [state]);
 
-  const appPath = `courses/public/${courseId}` as const;
-  const canonicalPath = `/courses/public/${encodeURIComponent(courseId)}`;
+  if (!id) {
+    return (
+      <ShareLinkFallback
+        title="공유된 코스"
+        description="미리보기를 불러오지 못했어요. 앱을 설치한 뒤 같은 링크를 다시 열어 주세요."
+        appPath={appPath}
+        appButtonLabel="앱에서 코스 보기"
+        canonicalPath={canonicalPath}
+      />
+    );
+  }
 
   if (state.status === 'not_found' || state.status === 'error') {
     return (
@@ -120,6 +130,7 @@ export function CourseSharePage() {
   }
 
   const { course } = state;
+  const mapLoading = !mapResolved;
   const canonicalUrl = `${env.shareSiteUrl.replace(/\/$/, '')}${canonicalPath}`;
   const ogDescription = [course.region, course.category, course.durationLabel]
     .filter(Boolean)

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 import { buildFallbackInvite, fetchFriendInvitePreview } from '../api/friends';
@@ -16,7 +16,6 @@ const CODE_PATTERN = /^[A-Za-z0-9]{4,16}$/;
 type PageState =
   | { status: 'loading' }
   | { status: 'success'; invite: FriendInvitePreview }
-  | { status: 'not_found' }
   | { status: 'error' };
 
 function getInitials(name: string): string {
@@ -27,36 +26,51 @@ export function FriendInvitePage() {
   const { friendCode = '' } = useParams<{ friendCode: string }>();
   const [state, setState] = useState<PageState>({ status: 'loading' });
 
-  const load = useCallback(async () => {
-    const code = friendCode.trim();
-    if (!code || !CODE_PATTERN.test(code)) {
-      setState({ status: 'not_found' });
-      return;
-    }
-    setState({ status: 'loading' });
-    try {
-      const preview = await fetchFriendInvitePreview(code);
-      setState({
-        status: 'success',
-        invite: preview ?? buildFallbackInvite(code),
-      });
-    } catch {
-      setState({ status: 'error' });
-    }
-  }, [friendCode]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
+  const code = friendCode.trim();
+  const invalidCode = !code || !CODE_PATTERN.test(code);
   const appPath = `friends/add/${friendCode}` as const;
   const canonicalPath = `/friends/add/${encodeURIComponent(friendCode)}`;
 
-  if (state.status === 'not_found') {
+  useEffect(() => {
+    if (invalidCode) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const preview = await fetchFriendInvitePreview(code);
+        if (cancelled) return;
+        setState({
+          status: 'success',
+          invite: preview ?? buildFallbackInvite(code),
+        });
+      } catch {
+        if (!cancelled) setState({ status: 'error' });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [code, invalidCode]);
+
+  if (invalidCode) {
     return (
       <ShareLinkFallback
         title="친구 초대"
         description="유효하지 않은 초대 링크일 수 있어요. 앱을 설치한 뒤 링크를 다시 열어 주세요."
+        appPath={appPath}
+        appButtonLabel="앱에서 친구 추가"
+        canonicalPath={canonicalPath}
+      />
+    );
+  }
+
+  if (state.status === 'error') {
+    return (
+      <ShareLinkFallback
+        title="친구 초대"
+        description="미리보기를 불러오지 못했어요. 앱을 설치한 뒤 같은 링크를 다시 열어 주세요."
         appPath={appPath}
         appButtonLabel="앱에서 친구 추가"
         canonicalPath={canonicalPath}
@@ -76,20 +90,8 @@ export function FriendInvitePage() {
     );
   }
 
-  if (state.status === 'error') {
-    return (
-      <ShareLinkFallback
-        title="친구 초대"
-        description="미리보기를 불러오지 못했어요. 앱을 설치한 뒤 같은 링크를 다시 열어 주세요."
-        appPath={appPath}
-        appButtonLabel="앱에서 친구 추가"
-        canonicalPath={canonicalPath}
-      />
-    );
-  }
-
   const { invite } = state;
-  const code = invite.friendCode.toUpperCase();
+  const displayCode = invite.friendCode.toUpperCase();
   const canonicalUrl = `${env.shareSiteUrl.replace(/\/$/, '')}${canonicalPath}`;
 
   const steps = [
@@ -142,7 +144,7 @@ export function FriendInvitePage() {
             친구 코드
           </p>
           <p className="mt-2 text-3xl font-extrabold tracking-[0.35em] text-brand-500">
-            {code}
+            {displayCode}
           </p>
         </div>
 

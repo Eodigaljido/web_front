@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 import { MapPin, Users } from 'lucide-react';
@@ -28,31 +28,46 @@ export function CollaborativeSharePage() {
   const { courseId = '' } = useParams<{ courseId: string }>();
   const [state, setState] = useState<PageState>({ status: 'loading' });
 
-  const load = useCallback(async () => {
-    const id = courseId.trim();
-    if (!id) {
-      setState({ status: 'invite_only' });
-      return;
-    }
-    setState({ status: 'loading' });
-    try {
-      const course = await fetchCollaborativePreview(id);
-      if (course) {
-        setState({ status: 'success', course });
-        return;
-      }
-      setState({ status: 'invite_only' });
-    } catch {
-      setState({ status: 'error' });
-    }
-  }, [courseId]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
+  const id = courseId.trim();
   const appPath = `routes/collaborative/${courseId}` as const;
   const canonicalPath = `/routes/collaborative/${encodeURIComponent(courseId)}`;
+
+  useEffect(() => {
+    if (!id) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const course = await fetchCollaborativePreview(id);
+        if (cancelled) return;
+        if (course) {
+          setState({ status: 'success', course });
+          return;
+        }
+        setState({ status: 'invite_only' });
+      } catch {
+        if (!cancelled) setState({ status: 'error' });
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
+  if (!id) {
+    return (
+      <ShareLinkFallback
+        title="공동 루트 편집 초대"
+        pageTitle="공동 루트 편집 초대"
+        description="어디갈지도 앱에서 이 링크를 열면 공동 편집에 참여할 수 있어요."
+        appPath={appPath}
+        appButtonLabel="앱에서 공동 편집 참여"
+        canonicalPath={canonicalPath}
+      />
+    );
+  }
 
   if (state.status === 'error' || state.status === 'invite_only') {
     return (

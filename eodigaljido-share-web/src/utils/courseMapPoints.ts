@@ -76,7 +76,7 @@ async function stopsFromNames(course: CoursePreview): Promise<GeoPoint[]> {
   }
 
   if (course.arrival && stops.length < MAX_STOPS) {
-    await delay(geocodeCount++ * GEOCODE_DELAY_MS);
+    await delay(geocodeCount * GEOCODE_DELAY_MS);
     const p = await pointFromName(course.arrival, `도착 ${course.arrival}`);
     if (p) pushStop(stops, p);
   }
