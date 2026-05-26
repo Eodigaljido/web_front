@@ -18,11 +18,11 @@ on:
 env:
   # CI 빌드용 (운영 URL — 비밀 아님). 카카오 키는 Repository secrets에 추가 가능
   VITE_API_BASE_URL: ""
-  VITE_SHARE_SITE_URL: https://share.eodigaljido.rjsgud.com
+  VITE_SHARE_SITE_URL: https://eodigaljido.uk
   VITE_APP_SCHEME: eodigaljido
   VITE_PLAY_STORE_URL: https://play.google.com/store/apps/details?id=com.eodigaljido.app
   VITE_APP_STORE_URL: ""
-  VITE_OG_IMAGE_URL: https://share.eodigaljido.rjsgud.com/og-default.png
+  VITE_OG_IMAGE_URL: https://eodigaljido.uk/og-default.png
   VITE_KAKAO_MAP_APP_KEY: ${{ secrets.VITE_KAKAO_MAP_APP_KEY }}
   VITE_KAKAO_REST_API_KEY: ${{ secrets.VITE_KAKAO_REST_API_KEY }}
 

@@ -1,7 +1,7 @@
 # 어디갈지도 공유 웹 — 사용 가이드
 
 **서비스명:** 어디갈지도 (Eodigaljido)  
-**공유 사이트:** https://share.eodigaljido.rjsgud.com  
+**공유 사이트:** https://eodigaljido.uk  
 **프로젝트 폴더:** `eodigaljido-share-web`
 
 이 문서는 **링크를 받은 사용자**, **앱에서 공유하는 사용자**, **개발·운영 담당자**가 각각 무엇을 하면 되는지 정리합니다.
@@ -30,7 +30,7 @@
 **URL 형식**
 
 ```
-https://share.eodigaljido.rjsgud.com/courses/public/{코스ID}
+https://eodigaljido.uk/courses/public/{코스ID}
 ```
 
 **이용 순서**
@@ -47,7 +47,7 @@ https://share.eodigaljido.rjsgud.com/courses/public/{코스ID}
 **URL 형식**
 
 ```
-https://share.eodigaljido.rjsgud.com/friends/add/{친구코드}
+https://eodigaljido.uk/friends/add/{친구코드}
 ```
 
 **이용 순서**
@@ -64,7 +64,7 @@ https://share.eodigaljido.rjsgud.com/friends/add/{친구코드}
 **URL 형식**
 
 ```
-https://share.eodigaljido.rjsgud.com/routes/collaborative/{코스ID}
+https://eodigaljido.uk/routes/collaborative/{코스ID}
 ```
 
 **이용 순서**
@@ -88,9 +88,9 @@ https://share.eodigaljido.rjsgud.com/routes/collaborative/{코스ID}
 
 | 공유 종류 | 웹 URL | 앱 딥링크(참고) |
 |-----------|--------|-----------------|
-| 코스 | `https://share.eodigaljido.rjsgud.com/courses/public/{courseId}` | `eodigaljido://courses/public/{courseId}` |
-| 친구 초대 | `https://share.eodigaljido.rjsgud.com/friends/add/{friendCode}` | `eodigaljido://friends/add/{friendCode}` |
-| 공동 루트 편집 | `https://share.eodigaljido.rjsgud.com/routes/collaborative/{courseId}` | `eodigaljido://routes/collaborative/{courseId}` |
+| 코스 | `https://eodigaljido.uk/courses/public/{courseId}` | `eodigaljido://courses/public/{courseId}` |
+| 친구 초대 | `https://eodigaljido.uk/friends/add/{friendCode}` | `eodigaljido://friends/add/{friendCode}` |
+| 공동 루트 편집 | `https://eodigaljido.uk/routes/collaborative/{courseId}` | `eodigaljido://routes/collaborative/{courseId}` |
 
 **체크 포인트**
 
@@ -118,11 +118,11 @@ npm install
 
 ```env
 VITE_API_BASE_URL=
-VITE_SHARE_SITE_URL=https://share.eodigaljido.rjsgud.com
+VITE_SHARE_SITE_URL=https://eodigaljido.uk
 VITE_APP_SCHEME=eodigaljido
 VITE_PLAY_STORE_URL=https://play.google.com/store/apps/details?id=com.eodigaljido.app
 VITE_APP_STORE_URL=
-VITE_OG_IMAGE_URL=https://share.eodigaljido.rjsgud.com/og-default.png
+VITE_OG_IMAGE_URL=https://eodigaljido.uk/og-default.png
 ```
 
 개발 시 `VITE_API_BASE_URL`을 비우면 Vite가 `/api` 요청을 백엔드(`http://3.36.85.213:8080`)로 프록시합니다.
@@ -154,7 +154,7 @@ VITE_OG_IMAGE_URL=https://share.eodigaljido.rjsgud.com/og-default.png
 
 ### 5.1 배포 전 필수
 
-1. **DNS** `share.eodigaljido.rjsgud.com` → 서버 IP (Nginx) 또는 호스팅(Vercel, Cloudflare Pages 등)
+1. **DNS** `eodigaljido.uk` → 서버 IP (Nginx) 또는 호스팅(Vercel, Cloudflare Pages 등)
 2. **환경 변수** (호스팅 대시보드에 설정, 빌드 시 주입)
 
 | 변수 | 설명 | 앱(Expo) 대응 |
@@ -206,7 +206,7 @@ Google Maps / TMAP / Weather / OAuth 키는 share-web에서 쓰지 않습니다.
 브라우저에서 axios 호출이 되려면 API 서버에 다음 origin 허용이 필요합니다.
 
 ```
-https://share.eodigaljido.rjsgud.com
+https://eodigaljido.uk
 ```
 
 로컬 개발은 Vite 프록시로 우회합니다.
@@ -215,7 +215,7 @@ https://share.eodigaljido.rjsgud.com
 
 | 항목 | 값 |
 |------|-----|
-| 공유 호스트 | `share.eodigaljido.rjsgud.com` |
+| 공유 호스트 | `eodigaljido.uk` |
 | 코스 path | `/courses/public/:courseId` |
 | 친구 path | `/friends/add/:friendCode` |
 | App scheme | `eodigaljido` |
