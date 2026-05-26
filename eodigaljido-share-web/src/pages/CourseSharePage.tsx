@@ -5,8 +5,7 @@ import { Clock, MapPin, Star, Tag } from 'lucide-react';
 import { fetchCoursePreview } from '../api/courses';
 import { AppShell } from '../components/AppShell';
 import { CourseRouteMap } from '../components/CourseRouteMap';
-import { ErrorState } from '../components/ErrorState';
-import { NotFoundContent } from '../components/NotFoundContent';
+import { ShareLinkFallback } from '../components/ShareLinkFallback';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { Skeleton } from '../components/Skeleton';
 import { StoreButtons } from '../components/StoreButtons';
@@ -97,8 +96,19 @@ export function CourseSharePage() {
     };
   }, [state]);
 
-  if (state.status === 'not_found') {
-    return <NotFoundContent message="공유된 코스를 찾을 수 없어요" showOg={false} />;
+  const appPath = `courses/public/${courseId}` as const;
+  const canonicalPath = `/courses/public/${encodeURIComponent(courseId)}`;
+
+  if (state.status === 'not_found' || state.status === 'error') {
+    return (
+      <ShareLinkFallback
+        title="공유된 코스"
+        description="미리보기를 불러오지 못했어요. 앱을 설치한 뒤 같은 링크를 다시 열어 주세요."
+        appPath={appPath}
+        appButtonLabel="앱에서 코스 보기"
+        canonicalPath={canonicalPath}
+      />
+    );
   }
 
   if (state.status === 'loading') {
@@ -109,20 +119,11 @@ export function CourseSharePage() {
     );
   }
 
-  if (state.status === 'error') {
-    return (
-      <AppShell>
-        <ErrorState message="잠시 후 다시 시도해 주세요" onRetry={() => void load()} />
-      </AppShell>
-    );
-  }
-
   const { course } = state;
-  const canonicalUrl = `${env.shareSiteUrl.replace(/\/$/, '')}/courses/public/${encodeURIComponent(courseId)}`;
+  const canonicalUrl = `${env.shareSiteUrl.replace(/\/$/, '')}${canonicalPath}`;
   const ogDescription = [course.region, course.category, course.durationLabel]
     .filter(Boolean)
     .join(' · ');
-  const appPath = `courses/public/${courseId}` as const;
   const visibleSteps = course.steps?.slice(0, 5) ?? [];
   const extraSteps = (course.steps?.length ?? 0) - visibleSteps.length;
   const showMap = mapPoints.length > 0 && !mapSdkFailed;

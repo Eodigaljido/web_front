@@ -4,7 +4,11 @@
     "details": [
       {
         "appID": "TEAM_ID.com.eodigaljido.app",
-        "paths": ["/courses/public/*", "/friends/add/*"]
+        "paths": [
+          "/courses/public/*",
+          "/friends/add/*",
+          "/routes/collaborative/*"
+        ]
       }
     ]
   }

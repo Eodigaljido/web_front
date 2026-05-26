@@ -3,8 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { useParams } from 'react-router-dom';
 import { buildFallbackInvite, fetchFriendInvitePreview } from '../api/friends';
 import { AppShell } from '../components/AppShell';
-import { ErrorState } from '../components/ErrorState';
-import { NotFoundContent } from '../components/NotFoundContent';
+import { ShareLinkFallback } from '../components/ShareLinkFallback';
 import { PrimaryButton } from '../components/PrimaryButton';
 import { Skeleton } from '../components/Skeleton';
 import { StoreButtons } from '../components/StoreButtons';
@@ -50,8 +49,19 @@ export function FriendInvitePage() {
     void load();
   }, [load]);
 
+  const appPath = `friends/add/${friendCode}` as const;
+  const canonicalPath = `/friends/add/${encodeURIComponent(friendCode)}`;
+
   if (state.status === 'not_found') {
-    return <NotFoundContent message="유효하지 않은 초대 링크예요" showOg={false} />;
+    return (
+      <ShareLinkFallback
+        title="친구 초대"
+        description="유효하지 않은 초대 링크일 수 있어요. 앱을 설치한 뒤 링크를 다시 열어 주세요."
+        appPath={appPath}
+        appButtonLabel="앱에서 친구 추가"
+        canonicalPath={canonicalPath}
+      />
+    );
   }
 
   if (state.status === 'loading') {
@@ -68,16 +78,19 @@ export function FriendInvitePage() {
 
   if (state.status === 'error') {
     return (
-      <AppShell>
-        <ErrorState message="잠시 후 다시 시도해 주세요" onRetry={() => void load()} />
-      </AppShell>
+      <ShareLinkFallback
+        title="친구 초대"
+        description="미리보기를 불러오지 못했어요. 앱을 설치한 뒤 같은 링크를 다시 열어 주세요."
+        appPath={appPath}
+        appButtonLabel="앱에서 친구 추가"
+        canonicalPath={canonicalPath}
+      />
     );
   }
 
   const { invite } = state;
   const code = invite.friendCode.toUpperCase();
-  const appPath = `friends/add/${friendCode}` as const;
-  const canonicalUrl = `${env.shareSiteUrl.replace(/\/$/, '')}/friends/add/${encodeURIComponent(friendCode)}`;
+  const canonicalUrl = `${env.shareSiteUrl.replace(/\/$/, '')}${canonicalPath}`;
 
   const steps = [
     '앱을 설치하거나 이미 설치되어 있다면 열어 주세요.',

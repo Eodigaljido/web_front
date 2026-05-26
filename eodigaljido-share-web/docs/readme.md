@@ -59,9 +59,26 @@ https://share.eodigaljido.rjsgud.com/friends/add/{친구코드}
 
 > 친구 추가 API(`POST /friends/add`)는 **앱 전용**입니다. 웹은 안내만 합니다.
 
-### 2.3 홈(`/`)에 직접 들어간 경우
+### 2.3 공동 루트 편집 초대 링크
 
-공유 링크가 아니라 사이트 주소만 연 경우, 서비스 소개와 **앱 다운로드** 버튼이 보입니다. 공유 받은 내용은 **반드시 위 두 종류의 링크**로 들어와야 합니다.
+**URL 형식**
+
+```
+https://share.eodigaljido.rjsgud.com/routes/collaborative/{코스ID}
+```
+
+**이용 순서**
+
+1. 초대 링크를 엽니다.
+2. (백엔드 preview가 있으면) 루트 제목·경로 요약을 확인합니다.
+3. **「앱에서 공동 편집 참여」**를 눌러 앱을 엽니다.
+4. 앱에서 로그인 후 공동 편집 화면으로 이동합니다.
+
+> 편집 권한 검증은 **앱 + 백엔드**(`GET /api/courses/collaborative/{courseId}`)에서 처리합니다. 웹은 안내·앱 전환만 합니다.
+
+### 2.4 홈(`/`)에 직접 들어간 경우
+
+공유 링크가 아니라 사이트 주소만 연 경우, 서비스 소개와 **앱 다운로드** 버튼이 보입니다. 공유 받은 내용은 **위 세 종류의 링크**로 들어와야 합니다.
 
 ---
 
@@ -73,6 +90,7 @@ https://share.eodigaljido.rjsgud.com/friends/add/{친구코드}
 |-----------|--------|-----------------|
 | 코스 | `https://share.eodigaljido.rjsgud.com/courses/public/{courseId}` | `eodigaljido://courses/public/{courseId}` |
 | 친구 초대 | `https://share.eodigaljido.rjsgud.com/friends/add/{friendCode}` | `eodigaljido://friends/add/{friendCode}` |
+| 공동 루트 편집 | `https://share.eodigaljido.rjsgud.com/routes/collaborative/{courseId}` | `eodigaljido://routes/collaborative/{courseId}` |
 
 **체크 포인트**
 

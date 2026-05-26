@@ -1,5 +1,5 @@
-import axios from 'axios';
 import { apiClient } from './client';
+import { isPreviewUnavailable } from './previewErrors';
 import type { FriendInvitePreview } from '../types/friend';
 
 export async function fetchFriendInvitePreview(
@@ -18,9 +18,7 @@ export async function fetchFriendInvitePreview(
     }
     return null;
   } catch (error) {
-    if (axios.isAxiosError(error) && error.response?.status === 404) {
-      return null;
-    }
+    if (isPreviewUnavailable(error)) return null;
     throw error;
   }
 }

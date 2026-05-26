@@ -1,6 +1,9 @@
 import { env } from '../config/env';
 
-export type AppPath = `courses/public/${string}` | `friends/add/${string}`;
+export type AppPath =
+  | `courses/public/${string}`
+  | `friends/add/${string}`
+  | `routes/collaborative/${string}`;
 
 export function buildAppDeepLink(path: AppPath): string {
   return `${env.appScheme}://${path}`;
