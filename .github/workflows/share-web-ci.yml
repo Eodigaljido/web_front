@@ -68,13 +68,26 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${EC2_HOST:-}" ] || [ -z "${EC2_USER:-}" ] || [ -z "${EC2_KEY:-}" ]; then
-            echo "EC2_HOST, EC2_USER, EC2_KEY secrets가 필요합니다."
+            echo "::error::EC2_HOST, EC2_USER, EC2_KEY Repository secrets가 비어 있습니다."
             exit 1
           fi
           install -m 700 -d ~/.ssh
-          printf '%s\n' "$EC2_KEY" > ~/.ssh/ec2_deploy_key
+          # Windows CRLF·따옴표 제거 후 PEM 저장 (한 줄로 붙은 키는 실패함)
+          printf '%s\n' "$EC2_KEY" | tr -d '\r' | sed '/^$/d' > ~/.ssh/ec2_deploy_key
           chmod 600 ~/.ssh/ec2_deploy_key
-          ssh -o StrictHostKeyChecking=accept-new -i ~/.ssh/ec2_deploy_key \
+          if ! grep -q 'BEGIN.*PRIVATE KEY' ~/.ssh/ec2_deploy_key; then
+            echo "::error::EC2_KEY에 BEGIN … PRIVATE KEY 헤더가 없습니다. .pem 전체를 다시 붙여넣으세요."
+            exit 1
+          fi
+          if ! ssh-keygen -y -f ~/.ssh/ec2_deploy_key >/dev/null 2>&1; then
+            echo "::error::EC2_KEY 형식이 올바르지 않습니다. 줄바꿈이 깨졌을 수 있습니다."
+            exit 1
+          fi
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          ssh -i ~/.ssh/ec2_deploy_key \
+            -o BatchMode=yes \
+            -o PasswordAuthentication=no \
+            -o StrictHostKeyChecking=yes \
             "${EC2_USER}@${EC2_HOST}" bash -s <<'REMOTE'
           set -euo pipefail
           cd /var/www/web_front
